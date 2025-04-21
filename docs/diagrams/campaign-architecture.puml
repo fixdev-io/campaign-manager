@@ -1,0 +1,64 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam backgroundColor #fdfdfd
+skinparam packageBorderColor Gray
+skinparam componentBorderColor Black
+skinparam componentBackgroundColor White
+skinparam databaseBackgroundColor #fff8dc
+skinparam databaseBorderColor Black
+skinparam shadowing true
+
+actor "Admin" as Admin #LightBlue
+
+package "🌐 Web Layer" #aliceblue {
+    component "Web Admin Service" as UWebAdmin
+}
+
+package "🎯 Campaign Manager" #antiquewhite {
+    component "Campaign API" as API
+    component "Workflow Service" as Workflow
+    component "Temporal Engine" as Temporal
+    component "Settings Service" as Settings
+    component "Delivery Service" as Delivery
+    component "Analytics Service" as Analytics
+    component "Delivery Collector" as CollectorService
+    database "Delivery DataStore" as DeliveryStore
+    component "Segment DataSource" as SegmentSource
+    component "Settings DataSource" as SettingsSource
+}
+
+package "📡 Notification Channels" #lightgrey {
+    component "Firebase"
+    component "Email Provider"
+    component "SMS Provider"
+}
+
+Admin --> UWebAdmin : Create/Manage Campaign
+UWebAdmin --> API : campaignCreationRequest
+
+API --> Settings : Fetch test settings
+API --> Workflow : Start campaign with\ncampaignRunId
+
+Workflow --> Temporal : Run campaign\n(campaignRunId, List<Recipient>)
+
+Temporal --> Settings : Fetch Recipients
+Settings --> SegmentSource : Segment Recipients
+Settings --> SettingsSource : Load Rules
+
+Temporal --> Delivery : Send per Recipient\n(campaignRunId, Recipient)
+
+Delivery --> DeliveryStore : Save delivery status
+Delivery --> Firebase : If PUSH
+Delivery --> Email_Provider : If EMAIL
+Delivery --> SMS_Provider : If SMS
+
+Firebase --> CollectorService : Callback status
+Email_Provider --> CollectorService
+SMS_Provider --> CollectorService
+
+CollectorService --> DeliveryStore : Update delivery status\n(campaignRunId + Recipient)
+
+Analytics --> DeliveryStore : Analyze delivery\nper Recipient
+
+@enduml
