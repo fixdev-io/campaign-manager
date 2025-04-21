@@ -1,0 +1,26 @@
+name: Generate PlantUML Diagrams
+
+on:
+  push:
+    paths:
+      - 'docs/diagrams/*.puml'
+      - '.github/workflows/plantuml.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Generate PlantUML diagrams
+        uses: grassedge/generate-plantuml-action@v1.5
+        with:
+          path: docs/diagrams
+          message: Auto render PlantUML files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
